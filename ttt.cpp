@@ -1,12 +1,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <limits> // Add this line to include the <limits> header file
 
 using namespace std;
 
 bool valid(int sequence);
 void printBoard(char gameboard[3][3]);
-int playerTurn(int &location, int &row, int &col, char gameboard[3][3], int &retFlag);
+int playerTurn(char gameboard[3][3], int &retFlag);
 int reverse(int sequence);
 bool gamefinished(char gameboard[3][3]);
 void alienTurn(int &newSequence, char gameboard[3][3]);
@@ -29,7 +30,6 @@ int main(int argc, char *argv[])
     int newSequence = reverse(sequence);
     char gameboard[3][3] = {{'0', '0', '0'}, {'0', '0', '0'}, {'0', '0', '0'}};
 
-    int row, col, location;
     for (int i = 0; i < 5; i++)
     {
         alienTurn(newSequence, gameboard);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
             break;
 
         int retFlag;
-        int retVal = playerTurn(location, row, col, gameboard, retFlag);
+        int retVal = playerTurn(gameboard, retFlag);
         if (retFlag == 3)
             continue;
         if (retFlag == 1)
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
             return 0;
     }
 
-    cout << "It's a draw!" << endl;
+    cout << "DRAW" << endl;
     return 0;
 }
 
@@ -71,19 +71,38 @@ void alienTurn(int &newSequence, char gameboard[3][3])
     printBoard(gameboard);
 }
 
-int playerTurn(int &location, int &row, int &col, char gameboard[3][3], int &retFlag)
+int playerTurn(char gameboard[3][3], int &retFlag)
 {
+    int location, row, col;
     retFlag = 1;
     while (true)
     {
         cout << "Choose a location (number between 1 to 9): ";
         cin >> location;
+
+        if (cin.eof()) // Check if the end of file was reached
+        {
+            cout << endl
+                 << "Got EOF - exiting." << endl;
+            retFlag = 1;
+            return 0;
+        }
+
+        if (cin.fail())
+        {
+            cin.clear();                                         // Clear the error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
+            cout << "Invalid input, please enter a number between 1 and 9." << endl;
+            continue;
+        }
+
         if (location < 1 || location > 9)
         {
             cout << "Invalid location, try again" << endl;
             retFlag = 3;
             continue;
         }
+
         row = (location - 1) / 3;
         col = (location - 1) % 3;
         if (gameboard[row][col] != '0')
