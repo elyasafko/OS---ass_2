@@ -43,8 +43,8 @@ void run_command(const char *exec_command)
         if (exec_command)
         {
             execl("/bin/sh", "sh", "-c", exec_command, (char *)NULL);
-            perror("execl failed"); // Print an error message if execl fails.
-            close_resources_and_exit(EXIT_FAILURE);     // Exit with a failure status.
+            perror("execl failed");                 // Print an error message if execl fails.
+            close_resources_and_exit(EXIT_FAILURE); // Exit with a failure status.
         }
         else
         {
@@ -525,6 +525,21 @@ int main(int argc, char *argv[])
 
         // Run the program with the given arguments
         run_command(command);
+    }
+    else
+    {
+        while (true)
+        {
+            char buf[255];
+            ssize_t size;
+            if ((size = read(input_fd, buf, 255)) == -1)
+            {
+                fprintf(stderr, "Exiting.\n");
+                break;
+            }
+
+            write(output_fd, buf, size);
+        }
     }
 
     return EXIT_SUCCESS;
