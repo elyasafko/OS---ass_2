@@ -33,6 +33,7 @@ void close_resources_and_exit(int)
 
 void run_command(const char *exec_command)
 {
+    printf("Running command: %s\n", exec_command);
     // Fork a new process to run the command.
     // If the fork() function returns 0, this is the child process.
     if (fork() == 0)
@@ -82,6 +83,7 @@ int start_tcp_server(int port)
         perror("Failed to create server socket"); // Print an error message if the socket creation failed.
         exit(EXIT_FAILURE);                       // Exit with a failure status.
     }
+    printf("Server socket created\n"); // Print a message indicating that the server socket was created.
 
     // Set the socket options to reuse the address.
     int opt = 1;
@@ -91,6 +93,7 @@ int start_tcp_server(int port)
         close(server_fd);                       // Close the server socket.
         exit(EXIT_FAILURE);                     // Exit with a failure status.
     }
+    printf("Server socket options set\n"); // Print a message indicating that the server socket options were set.
 
     // Set up the server address structure.
     struct sockaddr_in serverAddress;
@@ -105,6 +108,7 @@ int start_tcp_server(int port)
         close(server_fd);                       // Close the server socket.
         exit(EXIT_FAILURE);                     // Exit with a failure status.
     }
+    printf("Server socket bound\n"); // Print a message indicating that the server socket was bound.
 
     // Start listening for incoming client connections.
     if (listen(server_fd, 1) == -1)
@@ -113,6 +117,7 @@ int start_tcp_server(int port)
         close(server_fd);                            // Close the server socket.
         exit(EXIT_FAILURE);                          // Exit with a failure status.
     }
+    printf("Server socket listening\n"); // Print a message indicating that the server socket is listening.
 
     // Accept an incoming client connection.
     struct sockaddr_in clientAddress;
@@ -124,6 +129,7 @@ int start_tcp_server(int port)
         close(server_fd);                             // Close the server socket.
         exit(EXIT_FAILURE);                           // Exit with a failure status.
     }
+    printf("Client connection accepted\n"); // Print a message indicating that the client connection was accepted.
 
     return clientSocket;
 }
@@ -135,10 +141,7 @@ int start_tcp_server(int port)
  */
 int start_tcp_client(const char *hostname, int port)
 {
-    // Declare a struct sockaddr_in variable to hold the server address.
-    struct sockaddr_in serv_addr;
     int client_fd;
-
     // Create a TCP client socket.
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -148,6 +151,7 @@ int start_tcp_client(const char *hostname, int port)
     printf("Socket created\n"); // Print a message indicating that the socket was created.
 
     // Set up the server address structure.
+    struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;   // Set the address family to AF_INET (IPv4).
     serv_addr.sin_port = htons(port); // Set the server port.
 
@@ -155,6 +159,7 @@ int start_tcp_client(const char *hostname, int port)
     if (hostname == NULL || (strcmp(hostname, "localhost") == 0))
     {
         serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // Set the server address to "127.0.0.1" (localhost).
+        printf("Server address set to localhost\n");
     }
     else
     {
@@ -165,6 +170,7 @@ int start_tcp_client(const char *hostname, int port)
             close(client_fd);                                 // Close the client socket.
             exit(EXIT_FAILURE);                               // Exit with a failure status.
         }
+        printf("Server address set to %s\n", hostname);
     }
 
     // Print a message indicating that the client is connecting to the server.
@@ -177,7 +183,6 @@ int start_tcp_client(const char *hostname, int port)
         close(client_fd);            // Close the client socket.
         exit(EXIT_FAILURE);          // Exit with a failure status.
     }
-
     printf("Connected to %s:%d\n", hostname ?: "localhost", port);
 
     return client_fd;
@@ -191,6 +196,7 @@ int start_udp_server(int port)
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
+    printf("UDP server socket created\n");
 
     // Set the socket options to reuse the address
     int opt = 1;
@@ -200,6 +206,7 @@ int start_udp_server(int port)
         close(server_fd);
         exit(EXIT_FAILURE);
     }
+    printf("UDP server socket options set\n");
 
     struct sockaddr_in address;
     address.sin_family = AF_INET;
@@ -212,24 +219,27 @@ int start_udp_server(int port)
         close(server_fd);
         exit(EXIT_FAILURE);
     }
+    printf("UDP server socket bound to port %d\n", port);
 
-    char buffer[1024];
-    struct sockaddr_in client_addr;
-    socklen_t client_addr_len = sizeof(client_addr);
+    //char buffer[1024];
+    //struct sockaddr_in client_addr;
+    //socklen_t client_addr_len = sizeof(client_addr);
 
-    int bytes_received = recvfrom(server_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
-    if (bytes_received == -1)
-    {
-        perror("error receiving data");
-        close_resources_and_exit(EXIT_FAILURE);
-    }
+    //int bytes_received = recvfrom(server_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_addr, &client_addr_len);
+    //if (bytes_received == -1)
+    //{
+    //    perror("error receiving data");
+    //    close_resources_and_exit(EXIT_FAILURE);
+    //}
+    //printf("Received data from client: %s\n", buffer);
 
     // Call connect to save the client address
-    if (connect(server_fd, (struct sockaddr *)&client_addr, client_addr_len) == -1)
-    {
-        perror("error connecting to client");
-        close_resources_and_exit(EXIT_FAILURE);
-    }
+    //if (connect(server_fd, (struct sockaddr *)&client_addr, client_addr_len) == -1)
+    //{
+    //    perror("error connecting to client");
+    //    close_resources_and_exit(EXIT_FAILURE);
+    //}
+    //printf("Connected to client\n");
     return server_fd;
 }
 
@@ -262,6 +272,7 @@ int start_udp_client(const char *hostname, int port)
     }
 
     sendto(client_fd, buffer, strlen(buffer), MSG_CONFIRM, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    connect(client_fd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr));
     printf("Message sent\n");
 
     return client_fd;
@@ -512,6 +523,7 @@ int main(int argc, char *argv[])
                 perror("dup2 input");
                 close_resources_and_exit(EXIT_FAILURE);
             }
+            printf("Input file descriptor changed to %d\n", input_fd);
         }
 
         if (output_fd != STDOUT_FILENO)
@@ -521,6 +533,7 @@ int main(int argc, char *argv[])
                 perror("dup2 output");
                 close_resources_and_exit(EXIT_FAILURE);
             }
+            printf("Output file descriptor changed to %d\n", output_fd);
         }
 
         // Run the program with the given arguments

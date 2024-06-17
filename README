@@ -23,13 +23,17 @@ a few options to run the program -
 2. run the program by typing "./mync -e "./ttt 123456789" -o TCPS4050" - this will run the program and send the output to port 4050.
 3. run the program by typing "./mync -e "./ttt 123456789" -b TCPS4050" - this will run the program and get the input and send the output on port 4050.
 4. run the program by typing "./mync -e "./ttt 123456789" -i TCPS4050 -o TCPC4455" - this will run the program and get the input from port 4050 and send the output to port 4455.
-  - remember to run the server 4455 before running the program with option 4 "nc -l -p 4455" (terminal 1).
-  - after running the server, run the program with option 4 "./mync -e "./ttt 123456789" -i TCPS4050 -o TCPC4455" (terminal 2).
-  - on another terminal (terminal 3) run the client "nc localhost 4050" to see the output.
+  1- clear;./mync -i TCPS4050
+  2- make;clear;./mync -e "./ttt 123456789" -i TCPS4455 -o TCPClocalhost,4050
+  3- clear;./mync -o TCPClocalhost,4455
 
 Question 3.5:
 
 - if there is no "-e "./ttt 123456789"" in the command, the program will act as a simple netcat program.
+
+- make;clear;./mync -i TCPS4050
+- clear;./mync -o TCPC4050
+
 
 
 Question 4:
