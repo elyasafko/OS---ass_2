@@ -284,6 +284,7 @@ int start_udp_client(const char *hostname, int port)
 
 int start_uds_server_datagram(char *path)
 {
+    printf("Starting UDS server\n");
     // create a socket
     int sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sockfd == -1)
@@ -291,7 +292,7 @@ int start_uds_server_datagram(char *path)
         perror("error creating socket");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Socket created\n");
     // bind the socket to the address
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
@@ -303,7 +304,7 @@ int start_uds_server_datagram(char *path)
         perror("error binding socket");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Socket bound\n");
     // receive dummy data to get the client address
     char buffer[1024];
     struct sockaddr_un client_addr;
@@ -315,19 +316,20 @@ int start_uds_server_datagram(char *path)
         perror("error receiving data");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Received data from client: %s\n", buffer);
     return sockfd;
 }
 
 int start_uds_server_stream(char *path)
 {
+    printf("Starting UDS server\n");
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
         perror("error creating socket");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Socket created\n");
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, path);
@@ -337,13 +339,13 @@ int start_uds_server_stream(char *path)
         perror("error binding socket");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Socket bound\n");
     if (listen(sockfd, 5) == -1)
     {
         perror("error listening");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Listening for connections\n");
     struct sockaddr_un client_addr;
     socklen_t client_addr_len = sizeof(client_addr);
     int client_fd = accept(sockfd, (struct sockaddr *)&client_addr, &client_addr_len);
@@ -352,11 +354,13 @@ int start_uds_server_stream(char *path)
         perror("error accepting connection");
         close_resources_and_exit(EXIT_FAILURE);
     }
+    printf("Connection accepted\n");
     return client_fd;
 }
 
 int start_uds_client_datagram(char *path)
 {
+    printf("Starting UDS client\n");
     int sockfd = socket(AF_UNIX, SOCK_DGRAM, 0);
     if (sockfd == -1)
     {
@@ -367,7 +371,7 @@ int start_uds_client_datagram(char *path)
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, path);
-
+    printf("Connecting to server\n");
     if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
     {
         perror("error connecting to server");
@@ -381,6 +385,7 @@ int start_uds_client_datagram(char *path)
 
 int start_uds_client_stream(char *path)
 {
+    printf("Starting UDS client\n");
     int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
@@ -391,13 +396,13 @@ int start_uds_client_stream(char *path)
     struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     strcpy(addr.sun_path, path);
-
+    printf("Connecting to server\n");
     if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
     {
         perror("error connecting to server");
         close_resources_and_exit(EXIT_FAILURE);
     }
-
+    printf("Connected to server\n");
     return sockfd;
 }
 
@@ -409,7 +414,7 @@ int start_uds_client_stream(char *path)
  */
 void configureInputOutput(bool tcp, bool udp, bool uds, bool server, bool client, int port, char *hostname, char *path, int change_in, int change_out)
 {
-    printf("configureInputOutput called with the info: tcp = %d, udp = %d, server = %d, client = %d, port = %d, hostname = %s\n", tcp, udp, server, client, port, hostname);
+    printf("configureInputOutput called with tcp: %d, udp: %d, uds: %d, server: %d, client: %d, port: %d, hostname: %s, path: %s, change_in: %d, change_out: %d\n", tcp, udp, uds, server, client, port, hostname, path, change_in, change_out);
     int new_fd;
     if (!uds && tcp && server)
     {
@@ -461,6 +466,30 @@ void configureInputOutput(bool tcp, bool udp, bool uds, bool server, bool client
     }
 }
 
+char *extract_path(const char *arg)
+{
+    // Find the "-i " option
+    const char *start = strstr(arg, "UDS");
+    if (start == NULL)
+    {
+        return NULL;
+    }
+    // Move past the "-i " option to the actual path
+    start += 5;
+
+    // Allocate memory for the path (assuming the path will not exceed 256 characters)
+    static char path[256];
+    int i = 0;
+
+    // Extract the path until you find a space or end of string
+    while (*start != ' ' && *start != '\0' && i < 255)
+    {
+        path[i++] = *start++;
+    }
+    path[i] = '\0'; // Null-terminate the string
+    return path;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -469,13 +498,16 @@ int main(int argc, char *argv[])
     char *command = NULL;
     char *server = NULL;
     char *client = NULL;
-    char *path = NULL;
-    static char location_file[256];
+    static char filepath[256];
     char flag_server = 0;
     char flag_client = 0;
     bool e_flag = false;
     bool t_flag = false;
     unsigned int time = 0;
+    bool udsss = false;
+    bool udscs = false;
+    bool udssd = false;
+    bool udscd = false;
 
     for (int i = 1; i < argc; i++)
     {
@@ -537,68 +569,53 @@ int main(int argc, char *argv[])
                 }
                 else if (strncmp(argv[i + 1], "UDS", 3) == 0)
                 {
-                    printf("Argument: %s\n", argv[i + 1]);
-                    if (strncmp(argv[i + 3], "S", 1) == 0)
+                    // Extract path from UDS argument
+                    char *file_location = extract_path(argv[i + 1]);
+                    if (file_location != NULL)
                     {
-                        printf("UDS server\n");
-                        if (strncmp(argv[i + 4], "D", 1) == 0)
-                        {
-                            printf("UDS server using datagram\n");
-                            path = argv[++i];
-                            flag_server = flag;
-                            printf("Flag server: %c\n", flag_server);
-                        }
-                        else if (strncmp(argv[i + 4], "S", 1) == 0)
-                        {
-                            printf("UDS server using stream\n");
-                            path = argv[++i];
-                            flag_server = flag;
-                            printf("Flag server: %c\n", flag_server);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Invalid UDS argument\n");
-                            return EXIT_FAILURE;
-                        }
+                        strncpy(filepath, file_location, sizeof(filepath) - 1); // Copy extracted path to filepath
+                        filepath[sizeof(filepath) - 1] = '\0';                  // Ensure null-termination
+                        printf("Extracted path: %s\n", filepath);
                     }
-                    else if (strncmp(argv[i + 3], "C", 1) == 0)
+                    else
                     {
-                        printf("UDS client\n");
-                        if (strncmp(argv[i + 4], "D", 1) == 0)
-                        {
-                            printf("UDS client using datagram\n");
-                            path = argv[++i];
-                            flag_client = flag;
-                            printf("Flag client: %c\n", flag_client);
-                        }
-                        else if (strncmp(argv[i + 4], "S", 1) == 0)
-                        {
-                            printf("UDS client using stream\n");
-                            path = argv[++i];
-                            flag_client = flag;
-                            printf("Flag client: %c\n", flag_client);
-                        }
-                        else
-                        {
-                            fprintf(stderr, "Invalid UDS argument\n");
-                            return EXIT_FAILURE;
-                        }
-                    }
-                    const char *start = strstr(path, "UDS");
-                    if (start == NULL)
-                    {
-                        return NULL;
-                    }
-                    start += 6;
+                        printf("Invalid UDS argument\n");
+                        return EXIT_FAILURE;
+                    }                 
 
-                    int i = 0;
-
-                    // Extract the path until you find a space or end of string
-                    while (*start != ' ' && *start != '\0' && i < 255)
+                    if (strncmp(argv[i + 1], "UDSSS", 5) == 0)
                     {
-                        location_file[i++] = *start++;
+                        printf("UDS server using stream\n");
+                        printf("file_location Path: %s\n", file_location);
+                        flag_server = flag;
+                        printf("Flag server: %c\n", flag_server);
+                        udsss = true;
                     }
-                    location_file[i] = '\0'; // Null-terminate the string
+                    if (strncmp(argv[i + 1], "UDSSD", 5) == 0)
+                    {
+                        printf("UDS server using datagram\n");
+                        printf("file_location Path: %s\n", file_location);
+                        flag_server = flag;
+                        printf("Flag server: %c\n", flag_server);
+                        udssd = true;
+                    }
+                    if (strncmp(argv[i + 1], "UDSCD", 5) == 0)
+                    {
+
+                        printf("UDS client using datagram\n");
+                        printf("file_location Path: %s\n", file_location);
+                        flag_client = flag;
+                        printf("Flag client: %c\n", flag_client);
+                        udscd = true;
+                    }
+                    if (strncmp(argv[i + 1], "UDSCS", 5) == 0)
+                    {
+                        printf("UDS client using stream\n");
+                        printf("file_location Path: %s\n", file_location);
+                        flag_client = flag;
+                        printf("Flag client: %c\n", flag_client);
+                        udscs = true;
+                    }
                 }
                 else
                 {
@@ -622,7 +639,7 @@ int main(int argc, char *argv[])
         alarm(time);
     }
 
-    if (server == NULL && client == NULL && e_flag == false)
+    if (server == NULL && client == NULL && e_flag == false && !(udssd || udsss || udscs || udscd))
     {
         run_command(command);
     }
@@ -720,48 +737,50 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (server && strncmp(server, "UDSSD", 5) == 0)
+    if (udssd)
     {
         if (flag_server == 'i')
-            configureInputOutput(false, true, true, true, false, NULL, NULL, location_file, 1, 0);
+            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 1, 0);
         else
         {
             fprintf(stderr, "Invalid flag\n");
             return EXIT_FAILURE;
         }
     }
-    if (client && strncmp(client, "UDSCD", 5) == 0)
+    if (udscd)
     {
         if (flag_client == 'o')
-            configureInputOutput(false, true, true, false, true, NULL, NULL, location_file, 0, 1);
+            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 0, 1);
         else
         {
             fprintf(stderr, "Invalid flag\n");
             return EXIT_FAILURE;
         }
     }
-    if (server && strncmp(server, "UDSSS", 5) == 0)
+    if (udsss)
     {
+        printf("using UDSSS\n");
+        printf("file location: %s\n", filepath);
         if (flag_server == 'i')
-            configureInputOutput(false, true, true, true, false, NULL, NULL, location_file, 1, 0);
+            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 1, 0);
         else if (flag_server == 'o')
-            configureInputOutput(false, true, true, true, false, NULL, NULL, location_file, 0, 1);
+            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 0, 1);
         else if (flag_server == 'b')
-            configureInputOutput(false, true, true, true, false, NULL, NULL, location_file, 1, 1);
+            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 1, 1);
         else
         {
             fprintf(stderr, "Invalid flag\n");
             return EXIT_FAILURE;
         }
     }
-    if (client && strncmp(client, "UDSCS", 5) == 0)
+    if (udscs)
     {
         if (flag_client == 'i')
-            configureInputOutput(false, true, true, false, true, NULL, NULL, location_file, 1, 0);
+            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 1, 0);
         else if (flag_client == 'o')
-            configureInputOutput(false, true, true, false, true, NULL, NULL, location_file, 0, 1);
+            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 0, 1);
         else if (flag_client == 'b')
-            configureInputOutput(false, true, true, false, true, NULL, NULL, location_file, 1, 1);
+            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 1, 1);
         else
         {
             fprintf(stderr, "Invalid flag\n");
@@ -770,6 +789,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Input file descriptor: %d\n", input_fd);
+    printf("Output file descriptor: %d\n", output_fd);
     if (e_flag)
     {
         if (input_fd != STDIN_FILENO)

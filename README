@@ -44,8 +44,32 @@ Question 4:
 # the problem we have is the close at the end of the tcp server
 # need to create some kind of flag/msg to tell when to close the connection
 
+Question 6:
 
+# UDS
+    # stream
+        # stream server
+        ./mync -e "./ttt 123456789" -i UDSSS/tmp/my_stream_socket
+        ./mync -e "./ttt 123456789" -o UDSSS/tmp/my_stream_socket
+        ./mync -e "./ttt 123456789" -b UDSSD/tmp/my_stream_socket
+        # stream client
+        ./mync -e "./ttt 123456789" -i UDSCS/tmp/my_stream_socket
+        ./mync -e "./ttt 123456789" -o UDSCS/tmp/my_stream_socket
+        ./mync -e "./ttt 123456789" -b UDSCD/tmp/my_stream_socket
+    
+    # datagram
+        # datagram server (only -i is possible)
+        ./mync -e "./ttt 123456789" -i UDSSD/tmp/my_datagram_socket
 
+        # datagram client (only -o is possible)
+        ./mync -e "./ttt 123456789" -o UDSCD/tmp/my_datagram_socket
+
+testing:
+case 1:
+  termian 1:
+  make;clear;./mync -e "./ttt 123456789" -i UDSSS/tmp/my_stream_socket
+  terminal 2:
+  clear;./mync -o UDSCS/tmp/my_stream_socket
 
 *** fix ***
 # need to fix the close at the end of the tcp server
