@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#define MAX_FILEPATH 256
 // Global variables to hold socket file descriptors
 int input_fd = STDIN_FILENO;
 int output_fd = STDOUT_FILENO;
@@ -484,8 +485,8 @@ char *extract_path(const char *arg)
     // Move past the "-i " option to the actual path
     start += 5;
 
-    // Allocate memory for the path (assuming the path will not exceed 256 characters)
-    static char path[256];
+    // Allocate memory for the path
+    static char path[MAX_FILEPATH];
     int i = 0;
 
     // Extract the path until you find a space or end of string
@@ -505,7 +506,8 @@ int main(int argc, char *argv[])
     char *command = NULL;
     char *server = NULL;
     char *client = NULL;
-    static char filepath[256];
+    static char ifilepath[MAX_FILEPATH];
+    static char ofilepath[MAX_FILEPATH];
     char flag_server = 0;
     char flag_client = 0;
     bool e_flag = false;
@@ -583,11 +585,12 @@ int main(int argc, char *argv[])
                 {
                     // Extract path from UDS argument
                     char *file_location = extract_path(argv[i + 1]);
+                    char *fp = (strcmp(argv[i], "-i") == 0) ? ifilepath : ofilepath;
                     if (file_location != NULL && (strlen(file_location) > 0))
                     {
-                        strncpy(filepath, file_location, sizeof(filepath) - 1); // Copy extracted path to filepath
-                        filepath[sizeof(filepath) - 1] = '\0';                  // Ensure null-termination
-                        printf("Extracted path: %s\n", filepath);
+                        strncpy(fp, file_location, MAX_FILEPATH - 1); // Copy extracted path to filepath
+                        fp[MAX_FILEPATH - 1] = '\0';                  // Ensure null-termination
+                        printf("Extracted path: %s\n", fp);
                     }
                     else
                     {
@@ -752,7 +755,7 @@ int main(int argc, char *argv[])
     if (udssd)
     {
         if (flag_server == 'i')
-            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 1, 0);
+            configureInputOutput(false, true, true, true, false, 0, NULL, ifilepath, 1, 0);
         else
         {
             fprintf(stderr, "Invalid flag\n");
@@ -762,7 +765,7 @@ int main(int argc, char *argv[])
     if (udscd)
     {
         if (flag_client == 'o')
-            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 0, 1);
+            configureInputOutput(false, true, true, false, true, 0, NULL, ofilepath, 0, 1);
         else
         {
             fprintf(stderr, "Invalid flag\n");
@@ -772,13 +775,14 @@ int main(int argc, char *argv[])
     if (udsss)
     {
         printf("using UDSSS\n");
-        printf("file location: %s\n", filepath);
+        char *fp = (flag_server == 'i') ? ifilepath : ofilepath;
+        printf("file location: %s\n", fp);
         if (flag_server == 'i')
-            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 1, 0);
+            configureInputOutput(false, true, true, true, false, 0, NULL, fp, 1, 0);
         else if (flag_server == 'o')
-            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 0, 1);
+            configureInputOutput(false, true, true, true, false, 0, NULL, fp, 0, 1);
         else if (flag_server == 'b')
-            configureInputOutput(false, true, true, true, false, 0, NULL, filepath, 1, 1);
+            configureInputOutput(false, true, true, true, false, 0, NULL, fp, 1, 1);
         else
         {
             fprintf(stderr, "Invalid flag\n");
@@ -787,12 +791,15 @@ int main(int argc, char *argv[])
     }
     if (udscs)
     {
+        printf("using UDSCS\n");
+        char *fp = (flag_client == 'i') ? ifilepath : ofilepath;
+        printf("file location: %s\n", fp);
         if (flag_client == 'i')
-            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 1, 0);
+            configureInputOutput(false, true, true, false, true, 0, NULL, fp, 1, 0);
         else if (flag_client == 'o')
-            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 0, 1);
+            configureInputOutput(false, true, true, false, true, 0, NULL, fp, 0, 1);
         else if (flag_client == 'b')
-            configureInputOutput(false, true, true, false, true, 0, NULL, filepath, 1, 1);
+            configureInputOutput(false, true, true, false, true, 0, NULL, fp, 1, 1);
         else
         {
             fprintf(stderr, "Invalid flag\n");
