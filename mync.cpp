@@ -477,7 +477,7 @@ char *extract_path(const char *arg)
 {
     // Find the "-i " option
     const char *start = strstr(arg, "UDS");
-    if (start == NULL)
+    if (start == NULL || (strlen(start) <= 5))
     {
         return NULL;
     }
@@ -583,7 +583,7 @@ int main(int argc, char *argv[])
                 {
                     // Extract path from UDS argument
                     char *file_location = extract_path(argv[i + 1]);
-                    if (file_location != NULL)
+                    if (file_location != NULL && (strlen(file_location) > 0))
                     {
                         strncpy(filepath, file_location, sizeof(filepath) - 1); // Copy extracted path to filepath
                         filepath[sizeof(filepath) - 1] = '\0';                  // Ensure null-termination
