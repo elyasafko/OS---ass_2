@@ -15,6 +15,8 @@
 int input_fd = STDIN_FILENO;
 int output_fd = STDOUT_FILENO;
 
+int child = 0;
+
 void close_socket_if_open()
 {
     if (input_fd != STDIN_FILENO)
@@ -32,6 +34,11 @@ void close_resources_and_exit(int)
 {
     close_socket_if_open();
 
+    if (child) {
+        printf("going to kill %d\n", child);
+        kill(child, SIGKILL);
+    }
+
     exit(EXIT_SUCCESS);
 }
 
@@ -40,7 +47,7 @@ void run_command(const char *exec_command)
     printf("Running command: %s\n", exec_command);
     // Fork a new process to run the command.
     // If the fork() function returns 0, this is the child process.
-    if (fork() == 0)
+    if ((child = fork()) == 0)
     {
         // Execute the command.
         // If exec_command is not NULL, execute the command using the shell.
