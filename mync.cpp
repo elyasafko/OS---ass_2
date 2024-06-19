@@ -528,6 +528,11 @@ int main(int argc, char *argv[])
             if (i + 1 < argc)
             {
                 time = atoi(argv[++i]);
+                if (time == 0) {
+                    printf("Error: timeout param error\n");
+                    return EXIT_FAILURE;
+                }
+
                 printf("Time: %d\n", time);
             }
             else
@@ -828,6 +833,9 @@ int main(int argc, char *argv[])
             }
 
             write(output_fd, buf, size);
+
+            if (time)
+                alarm(time);
         }
     }
 
