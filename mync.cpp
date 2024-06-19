@@ -506,10 +506,10 @@ int main(int argc, char *argv[])
     char *command = NULL;
     char *server = NULL;
     char *client = NULL;
-    static char ifilepath[MAX_FILEPATH];
-    static char ofilepath[MAX_FILEPATH];
-    char flag_server = 0;
-    char flag_client = 0;
+    static char ifilepath[MAX_FILEPATH] = {0};
+    static char ofilepath[MAX_FILEPATH] = {0};
+    char flag_server = '\0';
+    char flag_client = '\0';
     bool e_flag = false;
     bool t_flag = false;
     unsigned int time = 0;
