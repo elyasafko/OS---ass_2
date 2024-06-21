@@ -35,7 +35,8 @@ void close_resources_and_exit(int)
 {
     close_socket_if_open();
 
-    if (child) {
+    if (child)
+    {
         printf("going to kill %d\n", child);
         kill(child, SIGKILL);
     }
@@ -528,112 +529,112 @@ int main(int argc, char *argv[])
     {
         switch (opt)
         {
-            case 'e':
-                e_flag = true;
-                command = optarg;
-                printf("Command: %s\n", command);
-                break;
-            case 't':
-                t_flag = true;
-                time = atoi(optarg);
-                if (time == 0)
+        case 'e':
+            e_flag = true;
+            command = optarg;
+            printf("Command: %s\n", command);
+            break;
+        case 't':
+            t_flag = true;
+            time = atoi(optarg);
+            if (time == 0)
+            {
+                printf("Error: timeout param error\n");
+                return EXIT_FAILURE;
+            }
+            printf("Time: %d\n", time);
+            break;
+        case 'i':
+        case 'o':
+        case 'b':
+            printf("Flag: %c\n", opt);
+            if (strncmp(optarg, "TCPS", 4) == 0)
+            {
+                printf("Argument: %s\n", optarg);
+                server = optarg;
+                flag_server = opt;
+                printf("Flag server: %c\n", flag_server);
+            }
+            else if (strncmp(optarg, "TCPC", 4) == 0)
+            {
+                printf("Argument: %s\n", optarg);
+                client = optarg;
+                flag_client = opt;
+                printf("Flag client: %c\n", flag_client);
+            }
+            else if (strncmp(optarg, "UDPS", 4) == 0)
+            {
+                printf("Argument: %s\n", optarg);
+                server = optarg;
+                flag_server = opt;
+                printf("Flag server: %c\n", flag_server);
+            }
+            else if (strncmp(optarg, "UDPC", 4) == 0)
+            {
+                printf("Argument: %s\n", optarg);
+                client = optarg;
+                flag_client = opt;
+                printf("Flag client: %c\n", flag_client);
+            }
+            else if (strncmp(optarg, "UDS", 3) == 0)
+            {
+                // Extract path from UDS argument
+                char *file_location = extract_path(optarg);
+                char *fp = (opt == 'i') ? ifilepath : ofilepath;
+                if (file_location != NULL && (strlen(file_location) > 0))
                 {
-                    printf("Error: timeout param error\n");
-                    return EXIT_FAILURE;
-                }
-                printf("Time: %d\n", time);
-                break;
-            case 'i':
-            case 'o':
-            case 'b':
-                printf("Flag: %c\n", opt);
-                if (strncmp(optarg, "TCPS", 4) == 0)
-                {
-                    printf("Argument: %s\n", optarg);
-                    server = optarg;
-                    flag_server = opt;
-                    printf("Flag server: %c\n", flag_server);
-                }
-                else if (strncmp(optarg, "TCPC", 4) == 0)
-                {
-                    printf("Argument: %s\n", optarg);
-                    client = optarg;
-                    flag_client = opt;
-                    printf("Flag client: %c\n", flag_client);
-                }
-                else if (strncmp(optarg, "UDPS", 4) == 0)
-                {
-                    printf("Argument: %s\n", optarg);
-                    server = optarg;
-                    flag_server = opt;
-                    printf("Flag server: %c\n", flag_server);
-                }
-                else if (strncmp(optarg, "UDPC", 4) == 0)
-                {
-                    printf("Argument: %s\n", optarg);
-                    client = optarg;
-                    flag_client = opt;
-                    printf("Flag client: %c\n", flag_client);
-                }
-                else if (strncmp(optarg, "UDS", 3) == 0)
-                {
-                    // Extract path from UDS argument
-                    char *file_location = extract_path(optarg);
-                    char *fp = (opt == 'i') ? ifilepath : ofilepath;
-                    if (file_location != NULL && (strlen(file_location) > 0))
-                    {
-                        strncpy(fp, file_location, MAX_FILEPATH - 1); // Copy extracted path to filepath
-                        fp[MAX_FILEPATH - 1] = '\0';                  // Ensure null-termination
-                        printf("Extracted path: %s\n", fp);
-                    }
-                    else
-                    {
-                        printf("Invalid UDS argument\n");
-                        return EXIT_FAILURE;
-                    }
-
-                    if (strncmp(optarg, "UDSSS", 5) == 0)
-                    {
-                        printf("UDS server using stream\n");
-                        printf("file_location Path: %s\n", file_location);
-                        flag_server = opt;
-                        printf("Flag server: %c\n", flag_server);
-                        udsss = true;
-                    }
-                    if (strncmp(optarg, "UDSSD", 5) == 0)
-                    {
-                        printf("UDS server using datagram\n");
-                        printf("file_location Path: %s\n", file_location);
-                        flag_server = opt;
-                        printf("Flag server: %c\n", flag_server);
-                        udssd = true;
-                    }
-                    if (strncmp(optarg, "UDSCD", 5) == 0)
-                    {
-                        printf("UDS client using datagram\n");
-                        printf("file_location Path: %s\n", file_location);
-                        flag_client = opt;
-                        printf("Flag client: %c\n", flag_client);
-                        udscd = true;
-                    }
-                    if (strncmp(optarg, "UDSCS", 5) == 0)
-                    {
-                        printf("UDS client using stream\n");
-                        printf("file_location Path: %s\n", file_location);
-                        flag_client = opt;
-                        printf("Flag client: %c\n", flag_client);
-                        udscs = true;
-                    }
+                    strncpy(fp, file_location, MAX_FILEPATH - 1); // Copy extracted path to filepath
+                    fp[MAX_FILEPATH - 1] = '\0';                  // Ensure null-termination
+                    printf("Extracted path: %s\n", fp);
                 }
                 else
                 {
-                    fprintf(stderr, "Invalid TCP/UDP argument\n");
+                    printf("Invalid UDS argument\n");
                     return EXIT_FAILURE;
                 }
-                break;
-            default:
-                print_usage(argv[0]);
+
+                if (strncmp(optarg, "UDSSS", 5) == 0)
+                {
+                    printf("UDS server using stream\n");
+                    printf("file_location Path: %s\n", file_location);
+                    flag_server = opt;
+                    printf("Flag server: %c\n", flag_server);
+                    udsss = true;
+                }
+                if (strncmp(optarg, "UDSSD", 5) == 0)
+                {
+                    printf("UDS server using datagram\n");
+                    printf("file_location Path: %s\n", file_location);
+                    flag_server = opt;
+                    printf("Flag server: %c\n", flag_server);
+                    udssd = true;
+                }
+                if (strncmp(optarg, "UDSCD", 5) == 0)
+                {
+                    printf("UDS client using datagram\n");
+                    printf("file_location Path: %s\n", file_location);
+                    flag_client = opt;
+                    printf("Flag client: %c\n", flag_client);
+                    udscd = true;
+                }
+                if (strncmp(optarg, "UDSCS", 5) == 0)
+                {
+                    printf("UDS client using stream\n");
+                    printf("file_location Path: %s\n", file_location);
+                    flag_client = opt;
+                    printf("Flag client: %c\n", flag_client);
+                    udscs = true;
+                }
+            }
+            else
+            {
+                fprintf(stderr, "Invalid TCP/UDP argument\n");
                 return EXIT_FAILURE;
+            }
+            break;
+        default:
+            print_usage(argv[0]);
+            return EXIT_FAILURE;
         }
     }
 
