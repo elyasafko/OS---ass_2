@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <limits> // Add this line to include the <limits> header file
+#include <set>
 
 using namespace std;
 
@@ -151,27 +152,15 @@ void printBoard(char gameboard[3][3])
 
 bool valid(int sequence)
 {
-    if (sequence < 123456789 || sequence > 987654321)
-    {
-        return false;
-    }
+    std::set<int> emptySet;
 
-    bool digits[9] = {false};
-    for (int i = 0; i < 9; i++)
-    {
-        int digit = sequence % 10;
-        if (digit == 0)
-        {
-            return false;
-        }
-        if (digits[digit - 1])
-        {
-            return false;
-        }
-        digits[digit - 1] = true;
+    while (sequence > 0){
+        emptySet.insert(sequence % 10);
         sequence /= 10;
     }
-
+    if (emptySet.size() != 9){
+        return false;
+    }
     return true;
 }
 
